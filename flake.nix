@@ -12,23 +12,26 @@
     flake-utils,
     ...
   }: let
+    lib = nixpkgs.lib;
+
     systems = [
       "armv6l-linux"
       "armv7l-linux"
       "aarch64-linux"
     ];
-    lib = nixpkgs.lib;
 
     out = system: let
       pkgs = import nixpkgs {
         inherit system;
         config = {};
-        overlays = builtins.attrValues self.overlays;
+        overlays = [
+          self.overlays.patches
+        ];
       };
       appliedOverlay = self.overlays.default pkgs pkgs;
     in {
       packages = {
-        inherit (appliedOverlay) libpisp libcamera rpicam-apps;
+        inherit (appliedOverlay) libpisp libcamera rpicam-apps raspberrypi-wireless-firmware;
       };
     };
   in
@@ -37,20 +40,23 @@
     // {
       overlays = {
         default = final: prev:
-          import ./packages {
-            pkgs = prev;
-          };
+          final.lib.makeScope final.newScope (self: {
+            libpisp = self.callPackage ./packages/libpisp {};
+            libcamera = self.callPackage ./packages/libcamera {};
+            rpicam-apps = self.callPackage ./packages/rpicam-apps {};
+            raspberrypi-wireless-firmware = self.callPackage ./packages/raspberrypi-wireless-firmware {};
+          });
 
-        modifications = final: prev: {
+        patches = final: prev: {
+          # Fix unbound not cross-compiling
           unbound = prev.unbound.overrideAttrs (
             finalAttrs: previousAttrs: {
               nativeBuildInputs = (previousAttrs.nativeBuildInputs or []) ++ [final.buildPackages.bison];
             }
           );
 
-          # Pixman from stable 24.11 (v0.43.4) won't build
-          # on armv6/armv7, but the version (v0.44.2) from
-          # unstable builds, so make an override to change
+          # Pixman from stable 24.11 (v0.43.4) won't build on armv6/armv7,
+          # but the version (v0.44.2) works, so make an override to change
           # the derivation to same as in unstable.
           pixman = prev.pixman.overrideAttrs (
             finalAttrs: previousAttrs: {
