@@ -1,0 +1,21 @@
+diff --git a/src/py/libcamera/meson.build b/src/py/libcamera/meson.build
+index 596a203..c0b1db5 100644
+--- a/src/py/libcamera/meson.build
++++ b/src/py/libcamera/meson.build
+@@ -34,14 +34,14 @@ gen_py_controls = files('gen-py-controls.py')
+ pycamera_sources += custom_target('py_gen_controls',
+                                   input : controls_files,
+                                   output : ['py_controls_generated.cpp'],
+-                                  command : [gen_py_controls, '--mode', 'controls', '-o', '@OUTPUT@',
++                                  command : ['python3', gen_py_controls, '--mode', 'controls', '-o', '@OUTPUT@',
+                                              '-t', gen_py_controls_template, '@INPUT@'],
+                                   env : py_build_env)
+ 
+ pycamera_sources += custom_target('py_gen_properties',
+                                   input : properties_files,
+                                   output : ['py_properties_generated.cpp'],
+-                                  command : [gen_py_controls, '--mode', 'properties', '-o', '@OUTPUT@',
++                                  command : ['python3', gen_py_controls, '--mode', 'properties', '-o', '@OUTPUT@',
+                                              '-t', gen_py_controls_template, '@INPUT@'],
+                                   env : py_build_env)
+ 
